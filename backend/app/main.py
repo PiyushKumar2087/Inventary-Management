@@ -25,13 +25,21 @@ CORS(app, resources={r"/*": {
 }})
 
 
-# --- Error Handlers ---
+# --- Error Handlers & Health Check ---
+from werkzeug.exceptions import HTTPException
+
+@app.route("/", methods=["GET", "HEAD"])
+def read_root():
+    return jsonify({"status": "healthy", "message": "Inventory & Order Management API is running"}), 200
+
 @app.errorhandler(APIException)
 def handle_api_exception(e):
     return jsonify({"detail": e.detail}), e.status_code
 
 @app.errorhandler(Exception)
 def handle_general_exception(e):
+    if isinstance(e, HTTPException):
+        return jsonify({"detail": e.description}), e.code
     import traceback
     traceback.print_exc()
     return jsonify({"detail": str(e)}), 500
